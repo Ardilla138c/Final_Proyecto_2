@@ -1,212 +1,280 @@
-// Función para alternar entre modo oscuro y modo claro
-document.getElementById('toggleDarkMode').addEventListener('click', function () {
-    document.body.classList.toggle('light-mode');
-    const header = document.querySelector('header');
-    header.classList.toggle('light-mode');
-    
-    // Guardar la preferencia en localStorage
-    if (document.body.classList.contains('light-mode')) {
-        localStorage.setItem('theme', 'light');
-    } else {
-        localStorage.setItem('theme', 'dark');
-    }
-});
+/* script.js - manejo de usuarios, reseñas y tema */
+/* Recomendación: incluir defer en los scripts en los HTML */
 
-// Cargar la preferencia de tema al iniciar la página
-document.addEventListener('DOMContentLoaded', () => {
-    const theme = localStorage.getItem('theme');
-    if (theme === 'light') {
-        document.body.classList.add('light-mode');
-    } else {
-        document.body.classList.remove('light-mode');
-    }
-});
+(function(){ 
+  'use strict';
 
-// Simulación de CRUD con localStorage (para guardar reseñas)
-const formResena = document.getElementById('formResena');
-const listaResenas = document.getElementById('listaResenas');
+  /* ---------- UTILIDADES ---------- */
+  const qs = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
 
-// Mostrar reseñas guardadas
-function mostrarResenas() {
-    listaResenas.innerHTML = ''; // Limpiar la lista
-    const resenas = JSON.parse(localStorage.getItem('resenas')) || [];
-    resenas.forEach((resena, index) => {
-        const divResena = document.createElement('div');
-        divResena.classList.add('resena');
-        divResena.innerHTML = `
-            <h4>${resena.nombre}</h4>
-            <p>${resena.descripcion}</p>
-            <img src="${resena.foto}" alt="${resena.nombre}" width="100">
-            <button onclick="eliminarResena(${index})">Eliminar</button>
-        `;
-        listaResenas.appendChild(divResena);
+  function showAlert(message, type = 'success', timeout = 2800) {
+    const existing = document.querySelector('.alert-fixed');
+    if(existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = `alert alert-${type} alert-fixed`;
+    div.textContent = message;
+    document.body.appendChild(div);
+    setTimeout(()=> div.classList.add('show'), 10);
+    setTimeout(()=> div.remove(), timeout);
+  }
+
+  /* ---------- TEMA (claro/oscuro) ---------- */
+  const themeToggle = qs('#toggleDarkMode');
+  function applyStoredTheme(){
+    const theme = localStorage.getItem('theme') || 'dark';
+    if(theme === 'light') document.body.classList.remove('dark-mode');
+    else document.body.classList.add('dark-mode');
+  }
+  applyStoredTheme();
+
+  if(themeToggle){
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const current = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+      localStorage.setItem('theme', current);
     });
-}
+  }
 
-// Guardar una nueva reseña
-formResena.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const nombre = document.getElementById('nombreTrago').value;
-    const descripcion = document.getElementById('descripcion').value;
-    const foto = document.getElementById('fotoTrago').files[0];
+  /* ---------- SISTEMA DE USUARIOS (localStorage) ---------- */
+  function getUsers(){ return JSON.parse(localStorage.getItem('usuarios')) || []; }
+  function saveUsers(users){ localStorage.setItem('usuarios', JSON.stringify(users)); }
+  function setCurrentUser(email){ localStorage.setItem('currentUser', email); }
+  function getCurrentUser(){ return localStorage.getItem('currentUser') || null; }
+  function logout(){ localStorage.removeItem('currentUser'); }
 
-    if (foto) {
+  /* registro */
+  const registerForm = qs('#registerForm');
+  if(registerForm){
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nombre = qs('#nombre')?.value?.trim();
+      const email = qs('#email')?.value?.trim().toLowerCase();
+      const telefono = qs('#telefono')?.value?.trim();
+      const edad = parseInt(qs('#edad')?.value || 0, 10);
+      const password = qs('#password')?.value;
+
+      if(!nombre || !email || !telefono || !edad || !password){
+        showAlert('Completa todos los campos.', 'warning');
+        return;
+      }
+      if(!/\S+@\S+\.\S+/.test(email)){
+        showAlert('Correo inválido.', 'warning'); return;
+      }
+      if(edad < 18){
+        showAlert('Debes ser mayor de 18 años.', 'warning'); return;
+      }
+      const users = getUsers();
+      if(users.some(u => u.email === email)){
+        showAlert('Ya existe una cuenta con ese correo.', 'danger'); return;
+      }
+      // Guardar usuario (IMPORTANTE: solo demo, no guardar contraseñas en claro en producción)
+      users.push({ nombre, email, telefono, edad, password });
+      saveUsers(users);
+      setCurrentUser(email);
+      showAlert('¡Registro exitoso! Bienvenido(a) ' + nombre, 'success');
+      setTimeout(()=> window.location.href = 'home.html', 900);
+    });
+  }
+
+  /* login */
+  const loginForm = qs('#loginForm');
+  if(loginForm){
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = qs('#email')?.value?.trim().toLowerCase();
+      const password = qs('#password')?.value;
+      const users = getUsers();
+      const user = users.find(u => u.email === email && u.password === password);
+      if(!user){
+        showAlert('Credenciales incorrectas.', 'danger'); return;
+      }
+      setCurrentUser(user.email);
+      showAlert('Bienvenido(a) ' + user.nombre, 'success');
+      setTimeout(()=> window.location.href = 'home.html', 700);
+    });
+  }
+
+  /* cerrar sesión (si existe link con id cerrarSesion) */
+  const cerrarSesionLink = qs('#cerrarSesion');
+  if(cerrarSesionLink){
+    cerrarSesionLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      logout();
+      showAlert('Sesión cerrada.', 'info');
+      setTimeout(()=> window.location.href = 'index.html', 600);
+    });
+  }
+
+  /* mostrar lista de usuarios (usuarios.html) */
+  const listaUsuariosEl = qs('#listaUsuarios');
+  if(listaUsuariosEl){
+    const users = getUsers();
+    if(users.length === 0) listaUsuariosEl.innerHTML = '<p class="text-muted">No hay usuarios registrados.</p>';
+    else {
+      listaUsuariosEl.innerHTML = '';
+      users.forEach(u=>{
+        const div = document.createElement('div');
+        div.className = 'usuario';
+        div.innerHTML = `<h5>${u.nombre}</h5>
+                         <p class="mb-0"><small class="text-muted">Email:</small> ${u.email}</p>
+                         <p class="mb-0"><small class="text-muted">Tel:</small> ${u.telefono} • <small class="text-muted">Edad:</small> ${u.edad}</p>`;
+        listaUsuariosEl.appendChild(div);
+      });
+    }
+  }
+
+  /* ---------- RESEÑAS (CRUD simple en localStorage) ---------- */
+  function getResenas(){ return JSON.parse(localStorage.getItem('resenas')) || []; }
+  function saveResenas(r){ localStorage.setItem('resenas', JSON.stringify(r)); }
+
+  const formResena = qs('#formResena');
+  const listaResenas = qs('#listaResenas');
+
+  // Insertar reseña de ejemplo si no hay ninguna
+  if(!localStorage.getItem('resenas')){
+    const ejemplo = [{
+      nombreTrago: 'Sunset Bliss',
+      descripcion: 'Cóctel tropical con un toque cítrico — dulce y refrescante.',
+      foto: 'images/bebida1.jpg',
+      autor: 'Claudia',
+      fecha: new Date().toLocaleString()
+    }];
+    saveResenas(ejemplo);
+  }
+
+  function renderResenas(){
+    if(!listaResenas) return;
+    listaResenas.innerHTML = '';
+    const res = getResenas().slice().reverse(); // ver últimas primero
+    res.forEach((r, idx) => {
+      const card = document.createElement('div');
+      card.className = 'resena row align-items-center p-3 mb-3';
+      card.innerHTML = `
+        <div class="col-md-4">
+          <img src="${r.foto}" alt="${r.nombreTrago}" class="resena-img shadow-sm">
+        </div>
+        <div class="col-md-8">
+          <h4 class="mb-1">${r.nombreTrago}</h4>
+          <div class="meta">por <strong>${r.autor}</strong> · ${r.fecha}</div>
+          <p>${r.descripcion}</p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-danger btn-eliminar" data-index="${getResenas().length - 1 - idx}">Eliminar</button>
+          </div>
+        </div>
+      `;
+      listaResenas.appendChild(card);
+    });
+
+    // bind eliminar
+    qsa('.btn-eliminar').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = parseInt(e.target.dataset.index, 10);
+        const arr = getResenas();
+        arr.splice(i,1);
+        saveResenas(arr);
+        renderResenas();
+        showAlert('Reseña eliminada', 'info');
+      });
+    });
+  }
+  renderResenas();
+
+  // manejo del formulario de reseña
+  if(formResena){
+    formResena.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const currentEmail = getCurrentUser();
+      if(!currentEmail){
+        showAlert('Debes iniciar sesión para publicar una reseña.', 'warning');
+        setTimeout(()=> window.location.href = 'login.html', 900);
+        return;
+      }
+      const users = getUsers();
+      const autor = (users.find(u=>u.email===currentEmail) || {}).nombre || 'Usuario';
+
+      const nombreTrago = qs('#nombreTrago')?.value?.trim();
+      const descripcion = qs('#descripcion')?.value?.trim();
+      const fotoInput = qs('#fotoTrago');
+
+      if(!nombreTrago || !descripcion){
+        showAlert('Completa el nombre y la descripción.', 'warning'); return;
+      }
+
+      function pushResena(fotoData){
+        const r = getResenas();
+        r.push({
+          nombreTrago,
+          descripcion,
+          foto: fotoData,
+          autor,
+          fecha: new Date().toLocaleString()
+        });
+        saveResenas(r);
+        renderResenas();
+        showAlert('Reseña publicada', 'success');
+        formResena.reset();
+      }
+
+      if(fotoInput && fotoInput.files && fotoInput.files[0]){
         const reader = new FileReader();
-        reader.onload = function () {
-            const nuevaResena = {
-                nombre: nombre,
-                descripcion: descripcion,
-                foto: reader.result,
-            };
-            const resenas = JSON.parse(localStorage.getItem('resenas')) || [];
-            resenas.push(nuevaResena);
-            localStorage.setItem('resenas', JSON.stringify(resenas));
-            mostrarResenas();
-        };
-        reader.readAsDataURL(foto);
-    }
-});
+        reader.onload = () => pushResena(reader.result);
+        reader.readAsDataURL(fotoInput.files[0]);
+      } else {
+        // imagen por defecto si no suben
+        pushResena('images/tragos.jpg');
+      }
+    });
+  }
 
-// Eliminar una reseña
-function eliminarResena(index) {
-    const resenas = JSON.parse(localStorage.getItem('resenas')) || [];
-    resenas.splice(index, 1);
-    localStorage.setItem('resenas', JSON.stringify(resenas));
-    mostrarResenas();
-}
-
-// Cargar las reseñas al iniciar
-document.addEventListener('DOMContentLoaded', mostrarResenas);
-
-// Iniciar sesión con Firebase
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            // Redirigir a home.html si el login es exitoso
-            window.location.href = 'home.html';
-        })
-        .catch(error => {
-            alert(error.message);
-        });
-});
-
-// Registrar usuario con Firebase
-document.getElementById('registerForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            // Redirigir a home.html después del registro
-            window.location.href = 'home.html';
-        })
-        .catch(error => {
-            alert(error.message);
-        });
-});
-
-// Guardar mensaje de contacto
-document.getElementById('contactForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const nombre = document.getElementById('nombre').value;
-    const email = document.getElementById('email').value;
-    const mensaje = document.getElementById('mensaje').value;
-
-    // Puedes agregar lógica aquí para enviar el mensaje a un correo o base de datos
-    alert('Gracias por tu mensaje, te responderemos pronto.');
-});
-
-
-// Alternar entre modo oscuro y claro
-document.getElementById('toggleDarkMode').addEventListener('click', function () {
-    document.body.classList.toggle('light-mode');
-    document.body.classList.toggle('dark-mode');
-    
-    // Guardar la preferencia en localStorage
-    if (document.body.classList.contains('light-mode')) {
-        localStorage.setItem('theme', 'light');
+  /* Mostrar bienvenida en home si hay currentUser */
+  const welcomeEl = qs('#welcomeUser');
+  if(welcomeEl){
+    const cur = getCurrentUser();
+    if(cur){
+      const users = getUsers();
+      const u = users.find(x => x.email === cur);
+      welcomeEl.innerHTML = `<div class="alert alert-success">Bienvenido(a), <strong>${u?.nombre || 'Usuario'}</strong> — disfruta compartiendo tus creaciones.</div>`;
     } else {
-        localStorage.setItem('theme', 'dark');
+      welcomeEl.innerHTML = `<div class="alert alert-info">Bienvenido(a). <a href="login.html">Inicia sesión</a> o <a href="registro.html">Regístrate</a> para comentar.</div>`;
     }
-});
+  }
 
-// Cargar la preferencia de tema al iniciar la página
-document.addEventListener('DOMContentLoaded', () => {
-    const theme = localStorage.getItem('theme');
-    if (theme === 'light') {
-        document.body.classList.add('light-mode');
-        document.body.classList.remove('dark-mode');
-    } else {
-        document.body.classList.add('dark-mode');
-        document.body.classList.remove('light-mode');
-    }
-});
-// script.js
+  /* contacto: guardar mensaje local (demo) */
+  const contactForm = qs('#contactForm');
+  if(contactForm){
+    contactForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const nombre = qs('#nombre')?.value?.trim();
+      const email = qs('#email')?.value?.trim();
+      const mensaje = qs('#mensaje')?.value?.trim();
+      if(!nombre || !email || !mensaje){
+        showAlert('Completa todos los campos del contacto.', 'warning'); return;
+      }
+      // guardamos en localStorage como "mensajesContacto" (demo)
+      const msgs = JSON.parse(localStorage.getItem('mensajesContacto') || '[]');
+      msgs.push({nombre,email,mensaje, fecha: new Date().toLocaleString()});
+      localStorage.setItem('mensajesContacto', JSON.stringify(msgs));
+      showAlert('Gracias por tu mensaje, te responderemos pronto.', 'success');
+      contactForm.reset();
+    });
+  }
 
-// Capturar el formulario de registro
-document.getElementById('registerForm').addEventListener('submit', function (e) {
-    e.preventDefault(); // Prevenir el envío del formulario
+  /* Si hay elemento con id logoutBtn (por si lo quieres usar) */
+  const logoutBtn = qs('#logoutBtn');
+  if(logoutBtn){
+    logoutBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      logout();
+      showAlert('Has cerrado sesión.');
+      setTimeout(()=> window.location.href = 'index.html', 700);
+    });
+  }
 
-    // Obtener los valores de los campos
-    const nombre = document.getElementById('nombre').value;
-    const email = document.getElementById('email').value;
-    const telefono = document.getElementById('telefono').value;
-    const edad = parseInt(document.getElementById('edad').value);
-    const password = document.getElementById('password').value;
+  /* cargar elementos al inicio */
+  document.addEventListener('DOMContentLoaded', () => {
+    // ya renderizamos resenas más arriba si el DOM contiene el contenedor
+    renderResenas();
+  });
 
-    // Validación de los datos
-    if (!nombre || !email || !telefono || !edad || !password) {
-        alert("Por favor, completa todos los campos.");
-        return;
-    }
-
-    if (edad < 18) {
-        alert("Debes ser mayor de 18 años para registrarte.");
-        return;
-    }
-
-    // Crear objeto con los datos del usuario
-    const usuario = {
-        nombre: nombre,
-        email: email,
-        telefono: telefono,
-        edad: edad,
-        password: password
-    };
-
-    // Almacenar en localStorage (de forma simulada)
-    let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
-    usuarios.push(usuario);
-    localStorage.setItem('usuarios', JSON.stringify(usuarios));
-
-    // Confirmación de registro
-    alert("¡Registro exitoso!");
-    window.location.href = "home.html"; // Redirigir al inicio después del registro
-});
-
-// Mostrar los usuarios registrados (para fines de prueba)
-document.addEventListener('DOMContentLoaded', function() {
-    const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
-    const listaUsuarios = document.getElementById('listaUsuarios');
-
-    if (usuarios.length === 0) {
-        listaUsuarios.innerHTML = "<p>No hay usuarios registrados.</p>";
-    } else {
-        usuarios.forEach(usuario => {
-            const div = document.createElement('div');
-            div.classList.add('usuario');
-            div.innerHTML = `
-                <h3>${usuario.nombre}</h3>
-                <p>Email: ${usuario.email}</p>
-                <p>Teléfono: ${usuario.telefono}</p>
-                <p>Edad: ${usuario.edad}</p>
-            `;
-            listaUsuarios.appendChild(div);
-        });
-    }
-});
+})();
