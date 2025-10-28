@@ -48,12 +48,8 @@
      CONTROL DE ACCESO A PÁGINAS
      ============================ */
 
-  /* ============================
-   CONTROL DE ACCESO A PÁGINAS
-   ============================ */
-
-// Página actual (solo el nombre)
-const currentPage = window.location.pathname.split('/').pop().toLowerCase();
+  // Página actual (solo el nombre del archivo)
+const currentPage = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
 // Páginas públicas (visibles sin iniciar sesión)
 const publicPages = ['index.html', 'login.html', 'registro.html', ''];
@@ -64,7 +60,7 @@ const currentUser = getCurrentUser();
 (function enforceAccess() {
   if (!currentUser) {
     // Usuario NO logueado
-    if (currentPage !== 'index.html' && currentPage !== '' && currentPage !== 'login.html' && currentPage !== 'registro.html') {
+    if (!publicPages.includes(currentPage)) {
       // Si intenta entrar a páginas privadas sin login → enviarlo a login
       showAlert('Por favor inicia sesión para continuar.', 'warning', 1200);
       setTimeout(() => {
@@ -83,6 +79,7 @@ const currentUser = getCurrentUser();
     }
   }
 })();
+
 
 
   /* ---------- Mostrar / ocultar botones de navegación según sesión ---------- */
