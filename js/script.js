@@ -44,21 +44,17 @@
   function getCurrentUser(){ return localStorage.getItem('currentUser') || null; }
   function logout(){ localStorage.removeItem('currentUser'); }
 
-  /* ============================
-     CONTROL DE ACCESO A PÁGINAS
-     ============================ */
-
-  // Página actual (solo el nombre del archivo)
+// Página actual (solo el nombre del archivo)
 const currentPage = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
 // Páginas públicas (visibles sin iniciar sesión)
 const publicPages = ['index.html', 'login.html', 'registro.html', ''];
 
-// Función para obtener usuario actual
-const currentUser = getCurrentUser();
-
+// Función de control de acceso
 (function enforceAccess() {
-  if (!currentUser) {
+  const user = getCurrentUser(); // consultar en tiempo real
+
+  if (!user) {
     // Usuario NO logueado
     if (!publicPages.includes(currentPage)) {
       // Si intenta entrar a páginas privadas sin login → enviarlo a login
@@ -72,14 +68,13 @@ const currentUser = getCurrentUser();
     if (['login.html', 'registro.html'].includes(currentPage)) {
       // Si ya está logueado, no debe volver al login/registro → redirigir al home
       setTimeout(() => {
-        if (window.location.pathname.split('/').pop().toLowerCase() !== 'home.html') {
+        if (currentPage !== 'home.html') {
           window.location.href = 'home.html';
         }
       }, 400);
     }
   }
 })();
-
 
 
   /* ---------- Mostrar / ocultar botones de navegación según sesión ---------- */
