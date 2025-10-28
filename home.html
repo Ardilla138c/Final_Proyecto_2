@@ -55,15 +55,33 @@ zCerrar sesión </button-->
       </div>
     </section>
 
-    <div class="form-card mb-4">
-      <h3>Publicar Reseña</h3>
-      <form id="formResena" class="mt-2">
-        <input class="form-control mb-2" id="nombreTrago" placeholder="Nombre del trago" required>
-        <textarea class="form-control mb-2" id="descripcion" placeholder="Describe tu creación..." rows="3" required></textarea>
-        <input class="form-control mb-2" id="fotoTrago" type="file" accept="image/*">
-        <button class="btn btn-accent w-100">Publicar</button>
-      </form>
+
+<div class="accordion form-card mb-4" id="accordionResena">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingResena">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResena" aria-expanded="false" aria-controls="collapseResena">
+        Publicar Reseña
+      </button>
+    </h2>
+    <div id="collapseResena" class="accordion-collapse collapse" aria-labelledby="headingResena" data-bs-parent="#accordionResena">
+      <div class="accordion-body">
+        <form id="formResena" class="mt-2">
+          <input class="form-control mb-2" id="nombreTrago" placeholder="Nombre del trago" required>
+          <textarea class="form-control mb-2" id="descripcion" placeholder="Describe tu creación..." rows="3" required></textarea>
+          <input class="form-control mb-2" id="fotoTrago" type="file" accept="image/*">
+          <button class="btn btn-accent w-100">Publicar</button>
+        </form>
+      </div>
     </div>
+  </div>
+</div>
+
+
+
+    
+
+
+
 
     <section id="listaResenas">
       <!-- reseñas cargadas via script.js -->
