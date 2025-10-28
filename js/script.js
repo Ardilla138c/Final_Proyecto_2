@@ -48,41 +48,42 @@
      CONTROL DE ACCESO A PÁGINAS
      ============================ */
 
-  // Página actual (solo el nombre)
-  const currentPage = window.location.pathname.split('/').pop().toLowerCase();
+  /* ============================
+   CONTROL DE ACCESO A PÁGINAS
+   ============================ */
 
-  // Páginas públicas permitidas cuando NO hay sesión (index, login, registro)
-  const publicPagesWhenLoggedOut = ['index.html', 'login.html', 'registro.html', ''];
+// Página actual (solo el nombre)
+const currentPage = window.location.pathname.split('/').pop().toLowerCase();
 
-  // Comportamiento:
-  // - Si NO hay sesión y la página actual NO es una de publicPagesWhenLoggedOut => redirigir a index.html
-  // - Si HAY sesión y está en index/login/registro (páginas públicas) => redirigir a home.html
-  (function enforceAccess(){
-    const cur = getCurrentUser();
+// Páginas públicas (visibles sin iniciar sesión)
+const publicPages = ['index.html', 'login.html', 'registro.html', ''];
 
-    if(!cur){
-      // no logueado: bloquear cualquier página que no sea index/login/registro
-      if(!publicPagesWhenLoggedOut.includes(currentPage)){
-        // mostrar mensaje y redirigir al index
-        // se hace con setTimeout corto para permitir que el alert se vea
-        showAlert('Debes iniciar sesión para acceder. Serás redirigido a la página principal.', 'warning', 1200);
-        setTimeout(()=> {
-          window.location.href = 'index.html';
-        }, 700);
-      }
-    } else {
-      // está logueado: si está en páginas públicas, enviarlo al home
-      if(publicPagesWhenLoggedOut.includes(currentPage)){
-        // redirigir al home (si la página actual es index, login o registro)
-        setTimeout(()=> {
-          // evita loop: si ya está en home.html no hacemos nada
-          if(window.location.pathname.split('/').pop().toLowerCase() !== 'home.html'){
-            window.location.href = 'home.html';
-          }
-        }, 300);
-      }
+// Función para obtener usuario actual
+const currentUser = getCurrentUser();
+
+(function enforceAccess() {
+  if (!currentUser) {
+    // Usuario NO logueado
+    if (currentPage !== 'index.html' && currentPage !== '' && currentPage !== 'login.html' && currentPage !== 'registro.html') {
+      // Si intenta entrar a páginas privadas sin login → enviarlo a login
+      showAlert('Por favor inicia sesión para continuar.', 'warning', 1200);
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 700);
     }
-  })();
+  } else {
+    // Usuario logueado
+    if (['login.html', 'registro.html'].includes(currentPage)) {
+      // Si ya está logueado, no debe volver al login/registro → redirigir al home
+      setTimeout(() => {
+        if (window.location.pathname.split('/').pop().toLowerCase() !== 'home.html') {
+          window.location.href = 'home.html';
+        }
+      }, 400);
+    }
+  }
+})();
+
 
   /* ---------- Mostrar / ocultar botones de navegación según sesión ---------- */
   function updateNavButtons(){
@@ -415,3 +416,33 @@ function updateBtnActive(theme){
 
 if(btnDia) btnDia.addEventListener('click', ()=> setTheme('light'));
 if(btnNoche) btnNoche.addEventListener('click', ()=> setTheme('dark'));
+
+/* ============================= */
+/* ☀️🌙 Cambio de Tema (Día / Noche) */
+/* ============================= */
+
+//* ============================= */
+/* ☀️🌙 Cambio de Tema (Día / Noche) global */
+/* ============================= */
+document.addEventListener('DOMContentLoaded', () => {
+  const btnDia = document.getElementById('btnDia');
+  const btnNoche = document.getElementById('btnNoche');
+
+  // Función para aplicar tema guardado
+  function applyTheme(theme) {
+    document.body.classList.toggle('dark-mode', theme === 'dark');
+    localStorage.setItem('theme', theme);
+
+    // Actualizar botones activos
+    if (btnDia) btnDia.classList.toggle('active', theme === 'light');
+    if (btnNoche) btnNoche.classList.toggle('active', theme === 'dark');
+  }
+
+  // Cargar tema guardado al iniciar
+  const storedTheme = localStorage.getItem('theme') || 'light';
+  applyTheme(storedTheme);
+
+  // Eventos de los botones
+  if (btnDia) btnDia.addEventListener('click', () => applyTheme('light'));
+  if (btnNoche) btnNoche.addEventListener('click', () => applyTheme('dark'));
+});

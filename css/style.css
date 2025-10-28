@@ -1,9 +1,15 @@
-/* style.css - Shake & Nuts (elegante + bootstrap complement) */
+/* style.css - Shake & Nuts (elegante + bootstrap complement)
+   Versión corregida y optimizada por ChatGPT ✨ */
 
-/* Tipografías */
+/* ============================= */
+/* TIPOGRAFÍAS */
+/* ============================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@600;700&display=swap');
 
-:root{
+/* ============================= */
+/* VARIABLES DEL TEMA CLARO */
+/* ============================= */
+:root {
   --bg: #f8f8fa;
   --card: #ffffff;
   --text: #222;
@@ -14,48 +20,90 @@
   --glass: rgba(255,255,255,0.6);
 }
 
-/* modo oscuro */
-body.dark-mode{
-  --bg: #0f1113;
-  --card: #121217;
-  --text: #e8e8ea;
+/* ============================= */
+/* VARIABLES DEL TEMA OSCURO */
+/* ============================= */
+body.dark-mode {
+  --bg: #121212;
+  --card: #1e1e1e;
+  --text: #f8f9fa;
   --muted: #9b9b9b;
-  --accent: #d4a83a;
-  --glass: rgba(255,255,255,0.03);
+  --accent: #f5c518; /* dorado más brillante */
+  --accent-contrast: #000000;
+  --shadow: 0 6px 18px rgba(255,255,255,0.05);
   background-color: var(--bg);
   color: var(--text);
 }
 
-/* default (claro) */
-body{
+/* ============================= */
+/* BASE */
+/* ============================= */
+body {
   background-color: var(--bg);
   color: var(--text);
   font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  margin:0;
-  padding:0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* headings elegantes */
-h1,h2,h3,h4{
+/* ============================= */
+/* TITULOS ELEGANTES */
+/* ============================= */
+h1, h2, h3, h4 {
   font-family: 'Playfair Display', serif;
   color: var(--text);
+  transition: color 0.3s;
 }
 
-/* header */
-.site-header{
+/* ============================= */
+/* HEADER / NAVBAR */
+/* ============================= */
+.site-header {
   background: linear-gradient(90deg, rgba(0,0,0,0.04), transparent);
   backdrop-filter: blur(4px);
   box-shadow: var(--shadow);
-}
-.navbar-brand {
-  font-family: 'Playfair Display', serif;
-  font-weight:700;
-  color: var(--text) !important;
+  padding: 0.75rem 1.5rem;
 }
 
-/* card / form container */
+.navbar-brand {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--text) !important;
+  text-decoration: none;
+  font-size: 1.4rem;
+}
+
+/* ============================= */
+/* BOTONES PERSONALIZADOS */
+/* ============================= */
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  font-weight: 600;
+  transition: background 0.3s, color 0.3s;
+}
+.btn-accent:hover {
+  filter: brightness(1.08);
+}
+
+/* Botones de Día / Noche */
+#btnDia, #btnNoche {
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+#btnDia.active, #btnNoche.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+
+/* ============================= */
+/* TARJETAS Y FORMULARIOS */
+/* ============================= */
 .form-card {
   background: var(--card);
   border-radius: 12px;
@@ -63,27 +111,19 @@ h1,h2,h3,h4{
   box-shadow: var(--shadow);
   max-width: 720px;
   margin: 28px auto;
+  transition: background 0.3s, color 0.3s, border 0.3s;
 }
 
-/* botones personalizados */
-.btn-accent{
-  background: var(--accent);
-  color: var(--accent-contrast);
-  border: none;
-}
-.btn-accent:hover{
-  filter: brightness(1.03);
-}
-
-/* imágenes reseñas / carrusel */
-.resena-img, .hero-img, .carousel-item img{
+/* ============================= */
+/* IMÁGENES / RESEÑAS */
+/* ============================= */
+.resena-img, .hero-img, .carousel-item img {
   width: 100%;
   height: 320px;
   object-fit: cover;
   border-radius: 8px;
 }
 
-/* tarjeta reseña */
 .resena {
   background: var(--card);
   border-radius: 10px;
@@ -97,16 +137,20 @@ h1,h2,h3,h4{
   margin-bottom: 6px;
 }
 
-/* lista usuarios */
-.usuario{
+/* ============================= */
+/* LISTA USUARIOS */
+/* ============================= */
+.usuario {
   background: var(--card);
-  padding:12px;
-  border-radius:8px;
-  margin-bottom:10px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
   box-shadow: var(--shadow);
 }
 
-/* mensajes (alerts) centrados */
+/* ============================= */
+/* ALERTAS */
+/* ============================= */
 .alert-fixed {
   position: fixed;
   right: 20px;
@@ -115,21 +159,21 @@ h1,h2,h3,h4{
   min-width: 260px;
 }
 
-/* switch tema */
-#toggleDarkMode {
-  margin-left: .5rem;
-}
-
-/* footer */
-.site-footer{
+/* ============================= */
+/* FOOTER */
+/* ============================= */
+.site-footer {
   margin-top: 34px;
   padding: 20px 0;
-  text-align:center;
+  text-align: center;
   color: var(--muted);
+  transition: color 0.3s;
 }
 
-/* responsive tweaks */
-@media (max-width: 576px){
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+@media (max-width: 576px) {
   .resena-img, .hero-img, .carousel-item img {
     height: 200px;
   }
