@@ -9,19 +9,33 @@
   <script src="js/script.js" defer></script>
 </head>
 <body>
-  <header class="site-header py-2">
-    <div class="container d-flex justify-content-between align-items-center">
-      <a class="navbar-brand" href="index.html">Shake & Nuts</a>
-      <button id="toggleDarkMode" class="btn btn-secondary">Tema</button>
-    </div>
-  </header>
+  <header class="site-header d-flex justify-content-between align-items-center p-3">
+  <!-- Logo / Home -->
+  <a href="index.html" class="navbar-brand">Shake & Nuts</a>
+
+  <!-- Navegación -->
+  <nav class="d-flex align-items-center">
+    <a href="recetas.html" class="btn btn-outline-secondary me-2">Explorar Recetas</a>
+    <a href="contacto.html" class="btn btn-outline-secondary me-2">Contactos</a>
+    <a href="#" id="cerrarSesionBtn" class="btn btn-outline-danger">Cerrar Sesión</a>
+  </nav>
+
+  <!-- Botones de tema -->
+  <div class="btn-group ms-3" role="group" aria-label="Tema">
+    <button id="btnDia" class="btn btn-outline-secondary">Día ☀️</button>
+    <button id="btnNoche" class="btn btn-outline-secondary">Noche 🌙</button>
+  </div>
+</header>
+
+
 
   <main class="container py-5">
     <div class="row align-items-center">
       
       <!-- Columna con la imagen -->
       <div class="col-md-5 text-center mb-4 mb-md-0">
-        <img src="/images/Gemini_Generated_Image_tm45tatm45tatm45.png" alt="Foto de contacto" class="img-fluid rounded-circle shadow-lg" style="max-width: 80%; border: 4px solid #d4a017;">
+        <img src="/images/Gemini_Generated_Image_tm45tatm45tatm45.png" alt="Foto de contacto" class="contact-img img-fluid">
+
       </div>
       
       <!-- Columna con el formulario -->
@@ -40,9 +54,7 @@
     </div>
   </main>
 
-  <footer class="site-footer text-center py-3">
-    © 2025 - Shake & Nuts
-  </footer>
+  <small>© 2025 - Claudia Zapata - Todos los derechos reservados.</small>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

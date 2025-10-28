@@ -9,12 +9,25 @@
   <script src="js/script.js" defer></script>
 </head>
 <body>
-  <header class="site-header p-3">
-    <div class="container d-flex justify-content-between">
-      <a class="navbar-brand" href="index.html">Shake & Nuts</a>
-      <button id="toggleDarkMode" class="btn btn-secondary">Tema</button>
-    </div>
-  </header>
+  <header class="site-header d-flex justify-content-between align-items-center p-3">
+  <!-- Logo / Home -->
+  <a href="index.html" class="navbar-brand">Shake & Nuts</a>
+
+  <!-- Navegación -->
+  <nav class="d-flex align-items-center">
+    <a href="recetas.html" class="btn btn-outline-secondary me-2">Explorar Recetas</a>
+    <a href="contacto.html" class="btn btn-outline-secondary me-2">Contactos</a>
+    <a href="#" id="cerrarSesionBtn" class="btn btn-outline-danger">Cerrar Sesión</a>
+  </nav>
+
+  <!-- Botones de tema -->
+  <div class="btn-group ms-3" role="group" aria-label="Tema">
+    <button id="btnDia" class="btn btn-outline-secondary">Día ☀️</button>
+    <button id="btnNoche" class="btn btn-outline-secondary">Noche 🌙</button>
+  </div>
+</header>
+
+
 
   <main class="container">
     <div class="form-card mt-4">
