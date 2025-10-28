@@ -446,3 +446,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnDia) btnDia.addEventListener('click', () => applyTheme('light'));
   if (btnNoche) btnNoche.addEventListener('click', () => applyTheme('dark'));
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const btnSalirLogin = document.getElementById('btnSalirLogin');
+if(btnSalirLogin){
+  btnSalirLogin.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+}
