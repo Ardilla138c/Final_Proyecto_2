@@ -20,6 +20,7 @@
   }
 
   /* ---------- TEMA (claro/oscuro) ---------- */
+  // Nota: eliminé duplicados y centralicé la función de tema más abajo
   const themeToggle = qs('#toggleDarkMode');
   function applyStoredTheme(){
     const theme = localStorage.getItem('theme') || 'dark';
@@ -43,7 +44,76 @@
   function getCurrentUser(){ return localStorage.getItem('currentUser') || null; }
   function logout(){ localStorage.removeItem('currentUser'); }
 
-  /* registro */
+  /* ============================
+     CONTROL DE ACCESO A PÁGINAS
+     ============================ */
+
+  // Página actual (solo el nombre)
+  const currentPage = window.location.pathname.split('/').pop().toLowerCase();
+
+  // Páginas públicas permitidas cuando NO hay sesión (index, login, registro)
+  const publicPagesWhenLoggedOut = ['index.html', 'login.html', 'registro.html', ''];
+
+  // Comportamiento:
+  // - Si NO hay sesión y la página actual NO es una de publicPagesWhenLoggedOut => redirigir a index.html
+  // - Si HAY sesión y está en index/login/registro (páginas públicas) => redirigir a home.html
+  (function enforceAccess(){
+    const cur = getCurrentUser();
+
+    if(!cur){
+      // no logueado: bloquear cualquier página que no sea index/login/registro
+      if(!publicPagesWhenLoggedOut.includes(currentPage)){
+        // mostrar mensaje y redirigir al index
+        // se hace con setTimeout corto para permitir que el alert se vea
+        showAlert('Debes iniciar sesión para acceder. Serás redirigido a la página principal.', 'warning', 1200);
+        setTimeout(()=> {
+          window.location.href = 'index.html';
+        }, 700);
+      }
+    } else {
+      // está logueado: si está en páginas públicas, enviarlo al home
+      if(publicPagesWhenLoggedOut.includes(currentPage)){
+        // redirigir al home (si la página actual es index, login o registro)
+        setTimeout(()=> {
+          // evita loop: si ya está en home.html no hacemos nada
+          if(window.location.pathname.split('/').pop().toLowerCase() !== 'home.html'){
+            window.location.href = 'home.html';
+          }
+        }, 300);
+      }
+    }
+  })();
+
+  /* ---------- Mostrar / ocultar botones de navegación según sesión ---------- */
+  function updateNavButtons(){
+    const currentUser = getCurrentUser();
+    // buscadores comunes de enlaces/buttons
+    const loginLinks = qsa('a[href="login.html"], button[data-href="login.html"]');
+    const registroLinks = qsa('a[href="registro.html"], button[data-href="registro.html"]');
+    const cerrarBtns = qsa('#cerrarSesion, #cerrarSesionBtn');
+
+    if(currentUser){
+      // ocultar login/registro
+      loginLinks.forEach(el => el.style.display = 'none');
+      registroLinks.forEach(el => el.style.display = 'none');
+      // mostrar cerrar sesión
+      cerrarBtns.forEach(el => el.style.display = 'inline-block');
+    } else {
+      // mostrar login/registro
+      loginLinks.forEach(el => el.style.display = 'inline-block');
+      registroLinks.forEach(el => el.style.display = 'inline-block');
+      // ocultar cerrar sesión
+      cerrarBtns.forEach(el => el.style.display = 'none');
+    }
+  }
+
+  // ejecutar al cargar DOM
+  document.addEventListener('DOMContentLoaded', () => {
+    updateNavButtons();
+    // renderResenas se engancha más abajo; si no existe en esta página no hay problema
+  });
+
+  /* ---------- REGISTRO ---------- */
   const registerForm = qs('#registerForm');
   if(registerForm){
     registerForm.addEventListener('submit', (e) => {
@@ -68,16 +138,18 @@
       if(users.some(u => u.email === email)){
         showAlert('Ya existe una cuenta con ese correo.', 'danger'); return;
       }
-      // Guardar usuario (IMPORTANTE: solo demo, no guardar contraseñas en claro en producción)
       users.push({ nombre, email, telefono, edad, password });
       saveUsers(users);
       setCurrentUser(email);
+
+      // actualizamos UI y redirigimos al home
+      updateNavButtons();
       showAlert('¡Registro exitoso! Bienvenido(a) ' + nombre, 'success');
       setTimeout(()=> window.location.href = 'home.html', 900);
     });
   }
 
-  /* login */
+  /* ---------- LOGIN ---------- */
   const loginForm = qs('#loginForm');
   if(loginForm){
     loginForm.addEventListener('submit', (e) => {
@@ -90,23 +162,28 @@
         showAlert('Credenciales incorrectas.', 'danger'); return;
       }
       setCurrentUser(user.email);
+
+      // actualizar botones y redirigir
+      updateNavButtons();
       showAlert('Bienvenido(a) ' + user.nombre, 'success');
       setTimeout(()=> window.location.href = 'home.html', 700);
     });
   }
 
-  /* cerrar sesión (si existe link con id cerrarSesion) */
-  const cerrarSesionLink = qs('#cerrarSesion');
-  if(cerrarSesionLink){
-    cerrarSesionLink.addEventListener('click', (e) => {
+  /* ---------- CERRAR SESIÓN ---------- */
+  // Nos aseguramos de enganchar todos los posibles botones/enlaces que definiste
+  const cerrarSesionLinks = qsa('#cerrarSesion, #cerrarSesionBtn');
+  cerrarSesionLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
       e.preventDefault();
       logout();
-      showAlert('Sesión cerrada.', 'info');
+      updateNavButtons();
+      showAlert('Sesión cerrada. Redirigiendo al inicio...', 'info', 1000);
       setTimeout(()=> window.location.href = 'index.html', 600);
     });
-  }
+  });
 
-  /* mostrar lista de usuarios (usuarios.html) */
+  /* ---------- Mostrar lista de usuarios (admin view) ---------- */
   const listaUsuariosEl = qs('#listaUsuarios');
   if(listaUsuariosEl){
     const users = getUsers();
@@ -124,21 +201,21 @@
     }
   }
 
-  /* ---------- RESEÑAS (CRUD simple en localStorage) ---------- */
+  /* ---------- RESEÑAS ---------- */
   function getResenas(){ return JSON.parse(localStorage.getItem('resenas')) || []; }
   function saveResenas(r){ localStorage.setItem('resenas', JSON.stringify(r)); }
 
   const formResena = qs('#formResena');
   const listaResenas = qs('#listaResenas');
 
-  // Insertar reseña de ejemplo si no hay ninguna
   if(!localStorage.getItem('resenas')){
     const ejemplo = [{
       nombreTrago: 'Sunset Bliss',
       descripcion: 'Cóctel tropical con un toque cítrico — dulce y refrescante.',
       foto: 'images/bebida1.jpg',
       autor: 'Claudia',
-      fecha: new Date().toLocaleString()
+      fecha: new Date().toLocaleString(),
+      comentarios: []
     }];
     saveResenas(ejemplo);
   }
@@ -146,41 +223,56 @@
   function renderResenas(){
     if(!listaResenas) return;
     listaResenas.innerHTML = '';
-    const res = getResenas().slice().reverse(); // ver últimas primero
+    const res = getResenas().slice().reverse();
     res.forEach((r, idx) => {
       const card = document.createElement('div');
       card.className = 'resena row align-items-center p-3 mb-3';
       card.innerHTML = `
         <div class="col-md-4">
-          <img src="${r.foto}" alt="${r.nombreTrago}" class="resena-img shadow-sm">
+          <img src="${r.foto}" alt="${r.nombreTrago}" class="resena-img shadow-sm img-fluid rounded">
         </div>
         <div class="col-md-8">
           <h4 class="mb-1">${r.nombreTrago}</h4>
           <div class="meta">por <strong>${r.autor}</strong> · ${r.fecha}</div>
           <p>${r.descripcion}</p>
           <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-danger btn-eliminar" data-index="${getResenas().length - 1 - idx}">Eliminar</button>
+            <button class="btn btn-sm btn-outline-primary btn-comentar" data-index="${getResenas().length - 1 - idx}">Comentar</button>
+          </div>
+          <div class="comentarios mt-2">
+            ${(r.comentarios || []).map(c => `<p class="mb-1"><strong>${c.autor}:</strong> ${c.texto}</p>`).join('')}
           </div>
         </div>
       `;
       listaResenas.appendChild(card);
     });
 
-    // bind eliminar
-    qsa('.btn-eliminar').forEach(b => {
-      b.addEventListener('click', (e) => {
+    /* evento comentar */
+    qsa('.btn-comentar').forEach(b => {
+      b.addEventListener('click', e => {
         const i = parseInt(e.target.dataset.index, 10);
         const arr = getResenas();
-        arr.splice(i,1);
-        saveResenas(arr);
-        renderResenas();
-        showAlert('Reseña eliminada', 'info');
+        const currentEmail = getCurrentUser();
+        if(!currentEmail){
+          showAlert('Debes iniciar sesión para comentar.', 'warning');
+          return;
+        }
+        const users = getUsers();
+        const autor = (users.find(u=>u.email===currentEmail) || {}).nombre || 'Usuario';
+        const texto = prompt('Escribe tu comentario:');
+        if(texto && texto.trim()){
+          arr[i].comentarios = arr[i].comentarios || [];
+          arr[i].comentarios.push({ autor, texto, fecha: new Date().toLocaleString() });
+          saveResenas(arr);
+          renderResenas();
+          showAlert('Comentario agregado', 'success');
+        }
       });
     });
   }
-  renderResenas();
+  // renderResenas se llama en DOMContentLoaded (más abajo)
+  
 
-  // manejo del formulario de reseña
+  /* manejo del formulario de reseña */
   if(formResena){
     formResena.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -208,7 +300,8 @@
           descripcion,
           foto: fotoData,
           autor,
-          fecha: new Date().toLocaleString()
+          fecha: new Date().toLocaleString(),
+          comentarios: []
         });
         saveResenas(r);
         renderResenas();
@@ -221,13 +314,12 @@
         reader.onload = () => pushResena(reader.result);
         reader.readAsDataURL(fotoInput.files[0]);
       } else {
-        // imagen por defecto si no suben
         pushResena('images/tragos.jpg');
       }
     });
   }
 
-  /* Mostrar bienvenida en home si hay currentUser */
+  /* Mostrar bienvenida */
   const welcomeEl = qs('#welcomeUser');
   if(welcomeEl){
     const cur = getCurrentUser();
@@ -240,7 +332,7 @@
     }
   }
 
-  /* contacto: guardar mensaje local (demo) */
+  /* contacto */
   const contactForm = qs('#contactForm');
   if(contactForm){
     contactForm.addEventListener('submit', (e)=>{
@@ -251,7 +343,6 @@
       if(!nombre || !email || !mensaje){
         showAlert('Completa todos los campos del contacto.', 'warning'); return;
       }
-      // guardamos en localStorage como "mensajesContacto" (demo)
       const msgs = JSON.parse(localStorage.getItem('mensajesContacto') || '[]');
       msgs.push({nombre,email,mensaje, fecha: new Date().toLocaleString()});
       localStorage.setItem('mensajesContacto', JSON.stringify(msgs));
@@ -260,21 +351,67 @@
     });
   }
 
-  /* Si hay elemento con id logoutBtn (por si lo quieres usar) */
-  const logoutBtn = qs('#logoutBtn');
-  if(logoutBtn){
-    logoutBtn.addEventListener('click', (e)=>{
-      e.preventDefault();
-      logout();
-      showAlert('Has cerrado sesión.');
-      setTimeout(()=> window.location.href = 'index.html', 700);
-    });
-  }
-
-  /* cargar elementos al inicio */
+  // Finalmente, cuando el DOM esté listo, llamamos renderResenas (si aplica)
   document.addEventListener('DOMContentLoaded', () => {
-    // ya renderizamos resenas más arriba si el DOM contiene el contenedor
     renderResenas();
   });
 
-})();
+})(); // fin del IIFE
+
+/* ============================= */
+/* 🍸 BEBIDA DEL DÍA (Portada) */
+/* ============================= */
+const bebidaDiaDiv = document.getElementById('bebidaDia');
+
+if (bebidaDiaDiv) {
+  async function cargarBebidaDelDia() {
+    try {
+      const res = await fetch('https://www.thecocktaildb.com/api/json/v1/1/random.php');
+      const data = await res.json();
+      const bebida = data.drinks[0];
+
+      bebidaDiaDiv.innerHTML = `
+        <h3>${bebida.strDrink}</h3>
+        <img src="${bebida.strDrinkThumb}" alt="${bebida.strDrink}" class="img-fluid bebida-img mt-2">
+        <p class="mt-3"><strong>Instrucciones:</strong> ${bebida.strInstructions}</p>
+      `;
+    } catch (error) {
+      bebidaDiaDiv.innerHTML = `
+        <h3>Cold Brew de Avellana</h3>
+        <img src="images/coldbrew.jpg" alt="Cold Brew de Avellana" class="img-fluid bebida-img mt-2">
+        <p class="mt-3"><strong>Instrucciones:</strong> Mezcla café frío, leche de avena y jarabe de avellana. Sirve con hielo.</p>
+      `;
+    }
+  }
+
+  cargarBebidaDelDia();
+}
+
+/* ============================= */
+/* ☀️🌙 Cambio de Tema */
+/* ============================= */
+const btnDia = document.getElementById('btnDia');
+const btnNoche = document.getElementById('btnNoche');
+
+function applyStoredThemeFinal(){
+  const theme = localStorage.getItem('theme') || 'dark';
+  if(theme === 'light') document.body.classList.remove('dark-mode');
+  else document.body.classList.add('dark-mode');
+  updateBtnActive(theme);
+}
+applyStoredThemeFinal();
+
+function setTheme(theme){
+  if(theme === 'light') document.body.classList.remove('dark-mode');
+  else document.body.classList.add('dark-mode');
+  localStorage.setItem('theme', theme);
+  updateBtnActive(theme);
+}
+
+function updateBtnActive(theme){
+  if(btnDia) btnDia.classList.toggle('active', theme === 'light');
+  if(btnNoche) btnNoche.classList.toggle('active', theme === 'dark');
+}
+
+if(btnDia) btnDia.addEventListener('click', ()=> setTheme('light'));
+if(btnNoche) btnNoche.addEventListener('click', ()=> setTheme('dark'));
